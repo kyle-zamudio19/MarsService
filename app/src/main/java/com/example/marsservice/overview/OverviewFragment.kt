@@ -1,0 +1,88 @@
+package com.example.marsservice.overview
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.View.OnClickListener
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import com.example.marsservice.R
+import com.example.marsservice.databinding.FragmentOverviewBinding
+import com.example.marsservice.network.MarsApiFilter
+
+class OverviewFragment: Fragment(), OnClickListener {
+    /**
+     * Lazily initialize our [OverviewViewModel].
+     */
+    private val viewModel: OverviewViewModel by lazy {
+        ViewModelProvider(this)[OverviewViewModel::class.java]
+    }
+
+    /**
+     * Inflates the layout with Data Binding, sets its lifecycle owner to the OverviewFragment
+     * to enable Data Binding to observe LiveData, and sets up the RecyclerView with an adapter.
+     */
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+        val binding = FragmentOverviewBinding.inflate(inflater)
+//        val binding = GridViewItemBinding.inflate(inflater)
+
+        // Allows Data Binding to Observe LiveData with the lifecycle of this Fragment
+        binding.lifecycleOwner = this
+
+        // Giving the binding access to the OverviewViewModel
+        binding.viewModel = viewModel
+
+        binding.photosGrid.adapter = PhotoGridAdapter(PhotoGridAdapter.OnClickListener {
+            viewModel.displayPropertyDetails(it)
+        })
+
+        viewModel.navigateToSelectedProperty.observe(viewLifecycleOwner, Observer {
+            if ( null != it ) {
+                this.findNavController().navigate(
+                    OverviewFragmentDirections.actionShowDetail(it))
+                viewModel.displayPropertyDetailsComplete()
+            }
+        })
+
+        binding.btnShowAll.setOnClickListener(this)
+        binding.btnBuy.setOnClickListener(this)
+        binding.btnRent.setOnClickListener(this)
+
+        setHasOptionsMenu(true)
+        return binding.root
+    }
+
+    /**
+     * Inflates the overflow menu that contains filtering options.
+     */
+//    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+//        inflater.inflate(R.menu.overflow_menu, menu)
+//        super.onCreateOptionsMenu(menu, inflater)
+//    }
+
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        viewModel.updateFilter(
+//            when (item.itemId) {
+//                R.id.show_rent_menu -> MarsApiFilter.SHOW_RENT
+//                R.id.show_buy_menu -> MarsApiFilter.SHOW_BUY
+//                else -> MarsApiFilter.SHOW_ALL
+//            }
+//        )
+//        return true
+//    }
+
+    override fun onClick(v: View?) {
+        when(v?.id) {
+            R.id.btn_showAll -> viewModel.updateFilter(MarsApiFilter.SHOW_ALL)
+            R.id.btn_buy -> viewModel.updateFilter(MarsApiFilter.SHOW_BUY)
+            R.id.btn_rent -> viewModel.updateFilter(MarsApiFilter.SHOW_RENT)
+        }
+    }
+}
